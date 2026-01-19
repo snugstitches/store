@@ -59,21 +59,40 @@
     <div class="flex items-center space-x-3">
       
       <!-- Order Basket Button -->
-      <button
-        id="order-basket-button"
-        class="relative px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-full hover:bg-indigo-700 transition duration-150 shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        Order Basket
-      </button>
+     <button
+  id="order-basket-button"
+  class="relative px-2 py-2 md:px-4 md:py-2 bg-indigo-600 text-white text-sm font-medium rounded-full hover:bg-indigo-700 transition shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
 
-      <!-- Cart Button -->
-      <button
-        id="checkout-button-header"
-        class="relative px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-full hover:bg-indigo-700 transition duration-150 shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
-          <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.542 12 5 12h14a1 1 0 000-2h-3.951l-.54-1.625M9 16a2 2 0 11-4 0 2 2 0 014 0zM17 16a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-        Cart (<span id="cart-count">0</span>)
-      </button>
+  <!-- Icon (always visible) -->
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+      d="M3 3h18l-2 13H5L3 3z" />
+  </svg>
+
+  <!-- Text (hidden on mobile) -->
+  <span class="hidden md:inline">Order Basket</span>
+</button>
+
+    <button
+  id="checkout-button-header"
+  class="relative px-2 py-2 md:px-4 md:py-2 bg-indigo-600 text-white text-sm font-medium rounded-full hover:bg-indigo-700 transition shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" viewBox="0 0 20 20" fill="currentColor">
+    <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.542 12 5 12h14a1 1 0 000-2h-3.951l-.54-1.625M9 16a2 2 0 11-4 0 2 2 0 014 0zM17 16a2 2 0 11-4 0 2 2 0 014 0z" />
+  </svg>
+
+  <!-- Text hidden on mobile -->
+  <span class="hidden md:inline ml-1">
+    Cart (<span id="cart-count">0</span>)
+  </span>
+
+  <!-- Mobile cart badge -->
+  <span
+    class="md:hidden absolute -top-1 -right-1 bg-pink-500 text-white text-xs font-bold rounded-full px-1.5">
+    <span id="cart-count">0</span>
+  </span>
+</button>
+
 
      <!-- User  -->
       <p id="user-id-display" class="text-xs text-gray-500 hidden md:block"></p>
