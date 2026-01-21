@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snug Stitches - Crochet Art Shop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module" src="firebase.js"></script>
+    <style>
+        /* Custom styles for smoother UI and better aesthetics */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Light background */
+        }
+        .product-card {
+            transition: all 0.3s ease-in-out;
+        }
+        .product-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(99, 102, 241, 0.5); /* Indigo focus ring */
+        }
+        .modal-overlay {
+            z-index: 50;
+        }
+        .modal-content {
+            animation: fadeInScale 0.3s ease-out forwards;
+        }
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        /* Scrollbar styling for cart-items */
+        #cart-items::-webkit-scrollbar {
+            width: 8px;
+        }
+        #cart-items::-webkit-scrollbar-thumb {
+            background-color: #a5b4fc;
+            border-radius: 20px;
+        }
+        #cart-items::-webkit-scrollbar-track {
+            background-color: #e0e7ff;
+        }
+        #status-message{
+            margin-top: 500px;
+        }
+        .options{
+            height: 40px; width: 100%; text-align: center;
+            border-radius: 10px; 
+            display: flex;
+            /* justify-content: space-around;  */
+            align-items: center;           
+           
+            padding: 10px 0;
+           
+            margin-bottom: 20px;
+            font: bolder;
+        }
+        .option{
+            border-radius: 20px;
+            background-color: rgb(235, 235, 235);
+            padding: 7px 12px;
+           font-size: 12px;
+           font: bolder;
+           font-weight: 700;
+           color: rgb(0, 0, 0);
+           margin-right: 12px;
+        }
+        #optionid{
+            color: rgb(0, 0, 0);
+            background-color: rgb(252, 129, 190)
+
+        }
+
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <header id="header" class="bg-white shadow-lg sticky top-0 z-50">
+  <div class="container mx-auto p-4 flex justify-between items-center">
+    
+    <!-- Logo -->
+    <div class="text-2xl font-bold text-indigo-600">Snug Stitches</div>
+
+    <!-- Right Side Actions -->
+    <div class="flex items-center space-x-3">
+      
+      <!-- Order Basket Button -->
+      <button
+        id="order-basket-button"
+        class="relative px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-full hover:bg-indigo-700 transition duration-150 shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        Basket
+      </button>
+
+      <!-- Cart Button -->
+      <button
+        id="checkout-button-header"
+        class="relative px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-full hover:bg-indigo-700 transition duration-150 shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.542 12 5 12h14a1 1 0 000-2h-3.951l-.54-1.625M9 16a2 2 0 11-4 0 2 2 0 014 0zM17 16a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+        Cart (<span id="cart-count">0</span>)
+      </button>
+
+     <!-- User  -->
+      <p id="user-id-display" class="text-xs text-gray-500 hidden md:block"></p>
+    </div>
+
+  </div>
+</header>
+
+
+    <main class="container mx-auto p-4 md:p-8">
+        <div class="options">
+        <a href="bouquet.html" class="option" id="optionid">Bouquet</a>
+        <a href="keychain.html" class="option">Keychain</a>
+        <!-- <a href="" class="option">Flower Pots</a>
+        <a href="" class="option">Single Stem</a> -->
+        <a href="hairclip.html" class="option">Hair Clip</a>
+        </div>
+        <div id="status-message"
+     class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 z-50
+            p-2 px-9 text-center text-sm font-medium text-white
+            rounded-lg shadow-xl transition-opacity duration-300 ">
+</div>
+
+
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-8 text-center border-b-2 border-indigo-200 pb-3">
+            Bouquet Art Collection
+        </h1>
+
+        <div id="product-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        </div>
+
+        <div id="cart-summary-container" class="mt-12 p-6 bg-white rounded-xl shadow-2xl border border-indigo-100">
+            <h2 class="text-3xl font-bold text-indigo-700 mb-6 border-b pb-3">Your Order Basket</h2>
+            <div id="cart-items" class="space-y-4 max-h-96 overflow-y-auto pr-2">
+            </div>
+            <div id="cart-total-footer" class="pt-6 mt-6 border-t-2 border-indigo-100 flex justify-between items-center hidden">
+                <p class="text-2xl font-bold text-gray-800">Order Total:</p>
+                <p class="text-3xl font-extrabold text-indigo-600">₹<span id="cart-total-amount">0.00</span></p>
+            </div>
+            <p id="empty-cart-message" class="text-center text-gray-500 p-8 text-lg">Your cart is empty. Time to add some stitch art!</p>
+
+            <button
+                id="checkout-button-footer"
+                class="w-full mt-6 py-3 bg-pink-500 text-white text-lg font-semibold rounded-lg hover:bg-pink-600 transition duration-150 shadow-xl focus:outline-none focus:ring-4 focus:ring-pink-300 disabled:opacity-50"
+                disabled
+            >
+                Proceed to Checkout
+            </button>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-12">
+        <div class="container mx-auto p-6 text-center text-sm">
+            <p>&copy; 2025 Snug Stitches. Handcrafted with Care.</p>
+            <p class="mt-2 text-gray-400">From our hands to yours. Each stitch is a promise of quality and love</p>
+        </div>
+    </footer>
+
+    <div id="order-modal" class="modal-overlay hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 md:p-8 modal-content">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h2 class="text-2xl font-bold text-indigo-700">Confirm Order & Contact</h2>
+                <button id="modal-close-button" class="text-gray-400 hover:text-gray-600 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <p class="mb-4 text-lg font-semibold text-gray-700">Total: <span class="text-pink-500 text-2xl">₹<span id="modal-total-amount">0.00</span></span></p>
+
+            <form id="checkout-form" name="submit-to-google-sheet">
+                <div class="space-y-4">
+                    <div>
+                        <label for="customer-name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                        <input name="name" type="text" id="customer-name" required
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="John Doe"
+                        />
+                    </div>
+                    <div>
+                        <label for="customer-phone" class="block text-sm font-medium text-gray-700">Phone Number (10 digits, No dashes)</label>
+                        <input name="phone-no." type="tel" id="customer-phone" required maxlength="10" pattern="\d{10}"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="1234567890"
+                        />
+                        <p class="text-xs text-gray-500 mt-1"></p>
+                    </div>
+
+                    <div>
+                        <label for="product-number-input" class="block text-sm font-medium text-gray-700">Product Numbers (e.g., #1, #2, #3)</label>
+                        <input name="product-id" type="text" id="product-number-input" required 
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="#1, #2, #3..."
+                        />
+                        <p class="text-xs text-gray-500 mt-1">List the IDs of the products you are purchasing (pre-filled from cart).</p>
+                    </div>
+
+                    <div>
+                        <label for="customer-address" class="block text-sm font-medium text-gray-700">Shipping Address</label>
+                        <textarea name="address" id="customer-address" rows="3" required
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Street Address, City, Zip Code"
+                        ></textarea>
+                    </div>
+                </div>
+
+                <div id="form-error" class="mt-3 text-sm text-red-600 font-medium p-2 bg-red-50 rounded-md hidden"></div>
+
+                <button
+                    type="submit"
+                    id="place-order-button"
+                    class="w-full mt-6 py-3 bg-indigo-600 text-white text-lg font-semibold rounded-lg hover:bg-indigo-700 transition duration-150 shadow-lg focus:outline-none focus:ring-4 focus:ring-indigo-300"
+                >
+                    Confirm & Place Order
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="product-detail-modal" class="modal-overlay hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl lg:max-w-4xl p-6 md:p-8 modal-content">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h2 id="modal-product-name" class="text-2xl font-bold text-indigo-700"></h2>
+                <button id="product-modal-close-button" class="text-gray-400 hover:text-gray-600 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <img id="modal-product-image" src="" alt="" class="w-full h-auto object-contain rounded-lg shadow-xl border border-gray-200" />
+                </div>
+                
+                <div class="space-y-4">
+                    <p class="text-sm font-extrabold text-indigo-600" id="modal-product-id"></p>
+                    <p id="modal-product-description" class="text-gray-700 text-base"></p>
+                    
+                    <p class="text-3xl font-extrabold text-pink-500">
+                        ₹<span id="modal-product-price">0.00</span>
+                    </p>
+                    
+                    <button
+                        id="modal-add-to-cart-btn"
+                        data-product-id=""
+                        class="w-full py-3 bg-pink-500 text-white text-lg font-semibold rounded-lg hover:bg-pink-600 transition duration-150 shadow-md flex items-center justify-center space-x-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                        <span>Add to Cart</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- GLOBAL STATE & FIREBASE SETUP ---
+        // NOTE: If deploying, replace the placeholder values below with your actual Firebase project configuration.
+        const appId = 'snug-stitches-app'; 
+        const firebaseConfig = {
+            apiKey: "AIzaSyB-XXXXXXXXXXXXXXXXXXXXXXXXXX", // REPLACE THIS LINE
+            authDomain: "your-project-id.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project-id.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abcdef123456"
+        };
+        const initialAuthToken = null; 
+
+        let db;
+        let auth;
+        let userId = 'loading...';
+        let cart = [];
+        let isAuthReady = false;
+
+        // Mock Product Data (24 products)
+        const mockProducts = [
+            { id: 41, name: "Blushing Tulip Trio", price: 549.00, description: "These tulips are created using a specialized crochet technique that gives them a rounded, plump 3D shape.", imageUrl: "p27.jpeg" },
+            { id: 42, name: "Lavender Dream", price: 1999.00, description: "This elegant arrangement is a Crochet Lily and Lavender Mixed Bouquet.", imageUrl: "p28.jpeg" },
+            { id: 43, name: "Mini Bouquets (Pack-1)", price: 179.00, description: "Each flower is mounted on a sturdy green stem, ensuring it keeps its shape while displayed in a bouquet or a small vase.", imageUrl: "p3.jpg" },
+            { id: 44, name: "Cotton Candy Blooms", price: 1099.50, description: "This product is a Handcrafted Crochet Rose Bouquet, meticulously worked in soft, high-quality yarn.", imageUrl: "p5.jpg" },
+            { id: 45, name: "Blush Wildflower Bouquet", price: 699.00, description: "It stands out because it combines different crochet techniques to mimic a natural, hand-picked garden feel.", imageUrl: "p6.jpg" },
+            { id: 46, name: "Queen of Hearts", price: 799.00, description: "The flowers are hand-stitched using soft milk cotton yarn, which provides a smooth, matte finish.", imageUrl: "p44.jpg" },
+            { id: 47, name: "pink peonies", price: 699.90, description: "Pink Picnic Blooms or The Gingham Garden Bouquet.", imageUrl: "p9.jpg" },
+            { id: 48, name: "Sunbeam Pearl Wrap", price: 1299.00, description: "Handcrafted Sunflower and Daisy Crochet Arrangement, designed to capture the warmth of a summer garden.", imageUrl: "p10.jpg" },
+            { id: 49, name: "Eternal Rose Trio", price: 599.00, description: "The deep red yarn and the elegant black and gold wrapping create a high-contrast, sophisticated look.", imageUrl: "p11.jpeg" },
+            { id: 50, name: "Pocket Heart Bouquet", price: 249.00, description: "This single-stem heart bouquet is a soft, tangible reminder that they are loved.", imageUrl: "p12.jpg" },
+            { id: 51, name: "Sunshine Bouquet", price: 379.00, description: "This cheerful hand-crocheted bouquet features a vibrant sunflower.", imageUrl: "p17.jpg" },
+            { id: 52, name: "Petals Bouquet", price: 379.00, description: "Expertly wrapped in stylish, wave-patterned craft paper and finished with a shimmering gold organza ribbon.", imageUrl: "p20.jpg" },
+            { id: 53, name: "Crimson Everbloom Lily", price: 249.00, description: "An expansive, detailed cross-stitch of the iconic NYC skyline at night.", imageUrl: "p21.jpg" },
+            { id: 54, name: "Everlasting Love Knots", price: 699.00, description: "This vibrant bouquet of deep red roses and delicate white blossoms is a classic choice with a handmade twist.", imageUrl: "p22.jpg" },
+            { id: 55, name: "Velvet Tulip Bouquet", price: 799.00, description: "This bouquet features six hand-crocheted tulips in a beautiful gradient of light and dark purples.", imageUrl: "p23.jpg" },
+            { id: 56, name: "Midnight Rose Wrap", price: 699.00, description: "This rich, multi-textured bouquet combines deep red roses with delicate white accent blossoms and tall green foliage.", imageUrl: "p24.jpg" },
+            { id: 57, name: "Petite Bouquet", price: 299.50, description: "This handcrafted arrangement features a duo of classic spring blooms: a soft pink tulip and a pristine white rose.", imageUrl: "p31.jpeg" },
+            { id: 58, name: "Red-Daisy Duo", price: 349.00, description: "Plays off the deep red of the tulip and the softness of the yarn.", imageUrl: "p33.jpeg" },
+            { id: 59, name: "Tulip Trio", price: 379.00, description: "Sweet, celebratory, and perfect for Valentine's Day, anniversaries, or a just because gift for someone special.", imageUrl: "p36.jpeg" },
+            { id: 60, name: "Midnight Solo Rose", price: 399.00, description: "These bouquets are specifically designed for major life milestones, as shown by the Best Mom Ever and Just for You tags.", imageUrl: "p43.jpg" },
+            { id: 61, name: "Bunny Bloom Bouquet", price: 499.00, description: "Highlights the elegant pink lily and the cute character accompanying it.", imageUrl: "p38.jpeg" },
+            { id: 62, name: "Crochet Arrangement", price: 1799.00, description: "Unlike real flowers that wither in a week, these stay vibrant forever.", imageUrl: "p40.jpeg" },
+            { id: 63, name: "Daisy Mini-Bouquet", price: 199.00, description: "This specific bouquet stands out for its bright palette and youthful energy.", imageUrl: "p41.webp" },
+            { id: 64, name: "Summer Soul", price: 799.00, description: "Perfect for bouquets with dark, dramatic wrapping like the black and gold style.", imageUrl: "p42.jpg" },
+        ];
+
+
+        /**
+         * Utility function to display status messages.
+         * @param {string} text The message content.
+         * @param {string} type 'success' or 'error'.
+         */
+        function displayMessage(text, type) {
+            const msgEl = document.getElementById('status-message');
+            msgEl.textContent = text;
+            msgEl.classList.remove('hidden', 'bg-indigo-500', 'bg-red-500');
+            msgEl.classList.add(type === 'success' ? 'bg-indigo-500' : 'bg-red-500');
+
+            // Hide after 5 seconds
+            setTimeout(() => {
+                msgEl.classList.add('hidden');
+            }, 5000);
+        }
+
+        /**
+         * Renders the product cards onto the grid. (FIXED VERSION)
+         */
+        function renderProducts() {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = mockProducts.map(product => `
+                <div class="product-card bg-white rounded-xl overflow-hidden shadow-2xl">
+                    
+                    <div class="relative"> 
+                        <div class="absolute top-2 left-2 px-3 py-1 bg-indigo-600 text-white font-extrabold text-sm rounded-lg shadow-md z-10">
+                            #${String(product.id).padStart(2, '0')}
+                        </div>
+                        
+                        <img 
+                            src="${product.imageUrl}" 
+                            alt="${product.name}" 
+                            data-product-id="${product.id}"
+                            class="product-image-click w-full h-32 object-cover object-center flex items-center justify-center cursor-pointer"
+                            onerror="this.onerror=null; this.src='https://placehold.co/400x300/e0f2f1/00796b?text=Image+Unavailable';">
+                    </div>
+                    
+                    <div class="p-3">
+                        <h3 class="text-base font-bold text-gray-800 mb-1">
+                            ${product.name}
+                        </h3>
+                        <p class="text-gray-600 text-xs mb-2 line-clamp-2">${product.description}</p>
+
+                        <div class="flex justify-between items-center mt-2">
+                            <span class="text-sm font-extrabold text-indigo-600">₹${product.price.toFixed(2)}</span>
+                            
+                            <button
+                                data-product-id="${product.id}"
+                                class="add-to-cart-btn px-2 py-0.5 bg-pink-500 text-white text-xs font-semibold rounded-lg hover:bg-pink-600 transition duration-150 shadow-md flex items-center space-x-1"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                                </svg>
+                                <span>Add</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Attach event listeners after rendering
+            document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const productId = parseInt(e.currentTarget.dataset.productId);
+                    const product = mockProducts.find(p => p.id === productId);
+                    if (product) {
+                        addToCart(product);
+                    }
+                });
+            });
+            
+            // NEW: Attach click listener to the images
+            document.querySelectorAll('.product-image-click').forEach(img => {
+                img.addEventListener('click', (e) => {
+                    const productId = parseInt(e.currentTarget.dataset.productId);
+                    openProductModal(productId);
+                });
+            });
+        }
+
+        /**
+         * Opens the product detail modal with the specified product's data.
+         * @param {number} productId The ID of the product to display.
+         */
+        function openProductModal(productId) {
+            const product = mockProducts.find(p => p.id === productId);
+            if (!product) {
+                console.error('Product not found:', productId);
+                return;
+            }
+
+            // Populate Modal Content
+            document.getElementById('modal-product-name').textContent = product.name;
+            document.getElementById('modal-product-id').textContent = `Product ID: #${String(product.id).padStart(2, '0')}`;
+            document.getElementById('modal-product-description').textContent = product.description;
+            document.getElementById('modal-product-price').textContent = product.price.toFixed(2);
+            
+            const imageEl = document.getElementById('modal-product-image');
+            imageEl.src = product.imageUrl;
+            imageEl.alt = product.name;
+            
+            const addToCartBtn = document.getElementById('modal-add-to-cart-btn');
+            addToCartBtn.dataset.productId = product.id; // Store ID for button action
+            
+            // Ensure old listener is removed and new one is attached (if multiple clicks happen)
+            const newButton = addToCartBtn.cloneNode(true);
+            addToCartBtn.parentNode.replaceChild(newButton, addToCartBtn);
+            newButton.addEventListener('click', () => {
+                addToCart(product);
+                closeProductModal(); // Close modal after adding to cart
+            });
+            
+            // Show the modal
+            document.getElementById('product-detail-modal').classList.remove('hidden');
+        }
+
+        /**
+         * Closes the product detail modal.
+         */
+        function closeProductModal() {
+            document.getElementById('product-detail-modal').classList.add('hidden');
+        }
+
+        /**
+         * Renders the cart summary section.
+         */
+        function renderCart() {
+            const cartItemsEl = document.getElementById('cart-items');
+            const cartTotalAmountEl = document.getElementById('cart-total-amount');
+            const cartCountEl = document.getElementById('cart-count');
+            const totalFooterEl = document.getElementById('cart-total-footer');
+            const checkoutButtonFooter = document.getElementById('checkout-button-footer');
+            const emptyMsgEl = document.getElementById('empty-cart-message');
+
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+            cartItemsEl.innerHTML = cart.map(item => `
+                <div class="flex justify-between items-center border-b pb-3 last:border-b-0">
+                    <div class="flex items-center space-x-4">
+                        <img src="${item.imageUrl}" alt="${item.name}" class="w-12 h-12 object-cover rounded-md" onerror="this.onerror=null; this.src='https://placehold.co/50x50?text=Art';" />
+                        <div>
+                            <p class="font-semibold text-gray-800">${item.name} (#${String(item.id).padStart(2, '0')})</p>
+                            <p class="text-sm text-gray-500">₹${item.price.toFixed(2)} each</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-3">
+                        <div class="flex items-center border rounded-lg overflow-hidden">
+                            <button data-id="${item.id}" data-change="-1" class="qty-btn px-2 py-1 bg-gray-100 hover:bg-gray-200">-</button>
+                            <span class="px-3 text-sm font-medium">${item.quantity}</span>
+                            <button data-id="${item.id}" data-change="1" class="qty-btn px-2 py-1 bg-gray-100 hover:bg-gray-200">+</button>
+                        </div>
+
+                        <span class="font-bold text-lg text-indigo-600 w-16 text-right">₹${(item.price * item.quantity).toFixed(2)}</span>
+
+                        <button data-id="${item.id}" class="remove-from-cart-btn text-red-500 hover:text-red-700 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            cartTotalAmountEl.textContent = total.toFixed(2);
+            cartCountEl.textContent = cart.length;
+
+            if (cart.length > 0) {
+                totalFooterEl.classList.remove('hidden');
+                emptyMsgEl.classList.add('hidden');
+                checkoutButtonFooter.disabled = false;
+            } else {
+                totalFooterEl.classList.add('hidden');
+                emptyMsgEl.classList.remove('hidden');
+                checkoutButtonFooter.disabled = true;
+            }
+
+            // Attach cart action listeners
+            document.querySelectorAll('.qty-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const productId = parseInt(e.currentTarget.dataset.id);
+                    const change = parseInt(e.currentTarget.dataset.change);
+                    updateQuantity(productId, change);
+                });
+            });
+
+            document.querySelectorAll('.remove-from-cart-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const productId = parseInt(e.currentTarget.dataset.id);
+                    removeFromCart(productId);
+                });
+            });
+        }
+
+        /**
+         * Adds a product to the cart or increments its quantity.
+         * @param {object} product The product to add.
+         */
+        function addToCart(product) {
+            const existingItem = cart.find(item => item.id === product.id);
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({ ...product, quantity: 1 });
+            }
+            renderCart();
+            displayMessage(`${product.name} added to cart!`, 'success');
+        }
+
+        /**
+         * Updates the quantity of a product in the cart.
+         * @param {number} productId The ID of the product.
+         * @param {number} change The amount to change quantity by (+1 or -1).
+         */
+        function updateQuantity(productId, change) {
+            const item = cart.find(i => i.id === productId);
+            if (item) {
+                item.quantity += change;
+                if (item.quantity <= 0) {
+                    removeFromCart(productId);
+                } else {
+                    renderCart();
+                }
+            }
+        }
+
+        /**
+         * Removes a product from the cart.
+         * @param {number} productId The ID of the product to remove.
+         */
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            renderCart();
+        }
+
+        /**
+         * Handles order submission and saves data to Firestore for notification.
+         * @param {object} customerDetails - Name, phone, address.
+         */
+        async function placeOrder(customerDetails, productNumbers) {
+            if (!db || !isAuthReady || cart.length === 0) {
+                // displayMessage('Error: Cannot place order. Authentication not ready or cart is empty.', 'error');
+                return;
+            }
+
+            document.getElementById('place-order-button').textContent = 'Processing...';
+            document.getElementById('place-order-button').disabled = true;
+
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+            const orderData = {
+                ...customerDetails,
+                items: cart.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.quantity,
+                })),
+                totalAmount: parseFloat(total.toFixed(2)),
+                timestamp: serverTimestamp(),
+                customerUserId: userId,
+                status: 'Pending Review',
+                shopOwnerNote: `New order received! Contact customer via phone. Product IDs provided: ${productNumbers}`,
+            };
+
+            try {
+                // MANDATORY Public Collection Path for shop owner notification
+                const ordersRef = collection(db, `artifacts/${appId}/public/data/orders`);
+                await addDoc(ordersRef, orderData);
+
+                // Clear cart and close modal on success
+                cart = [];
+                renderCart();
+                document.getElementById('order-modal').classList.add('hidden');
+
+                displayMessage('Order placed successfully! The shop owner has been notified and will contact you shortly via the phone number provided.', 'success');
+
+            } catch (error) {
+                console.error("Error placing order:", error);
+                displayMessage(`Order Failed: ${error.message}`, 'error');
+            } finally {
+                document.getElementById('place-order-button').textContent = 'Confirm & Place Order';
+                document.getElementById('place-order-button').disabled = false;
+            }
+        }
+
+        // --- MODAL AND EVENT LISTENERS ---
+
+        function openCheckoutModal() {
+            if (cart.length === 0) {
+                displayMessage('Your cart is empty. Please add items before checking out.', 'error');
+                return;
+            }
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            document.getElementById('modal-total-amount').textContent = total.toFixed(2);
+            
+            // Prefill Product Numbers field with cart contents
+            const productIds = cart.map(item => `#${String(item.id).padStart(2, '0')}`).join(', ');
+            document.getElementById('product-number-input').value = productIds;
+
+            document.getElementById('order-modal').classList.remove('hidden');
+        }
+
+        function closeCheckoutModal() {
+            document.getElementById('order-modal').classList.add('hidden');
+            document.getElementById('form-error').classList.add('hidden');
+            // document.getElementById('checkout-form').reset(); // Uncomment this if you want the form to clear on close
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+        // Confirm Order Popup Buttons
+        document.getElementById('cancel-confirm-order').addEventListener('click', () => {
+        document.getElementById('confirm-order-modal').classList.add('hidden');
+        });
+
+    document.getElementById('final-confirm-order').addEventListener('click', () => {
+    document.getElementById('confirm-order-modal').classList.add('hidden');
+    document.getElementById('order-modal').classList.add('hidden'); // close cart/checkout modal
+
+    if (window.pendingOrder) {
+        placeOrder(
+            window.pendingOrder.customerDetails,
+            window.pendingOrder.productNumbers
+        );
+        window.pendingOrder = null;
+    }
+    });
+            // Setup Firebase on load
+            if (Object.keys(firebaseConfig).length && firebaseConfig.apiKey !== 'AIzaSyB-XXXXXXXXXXXXXXXXXXXXXXXXXX') { // Check if configuration is likely valid
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                const handleAuth = async () => {
+                    try {
+                        // Using Anonymous Sign-in for simple e-commerce checkout
+                        await signInAnonymously(auth);
+                    } catch (e) {
+                        console.error("Auth failed:", e);
+                        // displayMessage('Authentication failed. Please check Firebase configuration/rules.', 'error');
+                    }
+                };
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        document.getElementById('user-id-display').textContent = `User ID: ${userId}`;
+                        isAuthReady = true;
+                    }
+                    // Render UI once products and auth are ready
+                    renderProducts();
+                    renderCart();
+                });
+
+                handleAuth();
+            } else {
+                // displayMessage('Firebase is not configured or uses default placeholders. Orders cannot be saved. See console for details.', 'error');
+                // Ensure UI still loads even without Firebase connection
+                // document.getElementById('user-id-display').textContent = `User ID: DISABLED`;
+                renderProducts();
+                renderCart();
+            }
+
+            // Attach modal and checkout listeners
+            document.getElementById('checkout-button-header').addEventListener('click', openCheckoutModal);
+            document.getElementById('checkout-button-footer').addEventListener('click', openCheckoutModal);
+            document.getElementById('modal-close-button').addEventListener('click', closeCheckoutModal);
+
+            // NEW: Attach close listener for the Product Detail Modal
+            document.getElementById('product-modal-close-button').addEventListener('click', closeProductModal);
+
+            document.getElementById('checkout-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('customer-name').value.trim();
+                const phone = document.getElementById('customer-phone').value.trim();
+                const productNumbers = document.getElementById('product-number-input').value.trim();
+                const address = document.getElementById('customer-address').value.trim();
+                const formErrorEl = document.getElementById('form-error');
+
+                if (!name || !phone || !address || !productNumbers) {
+                    formErrorEl.textContent = 'Please fill in all contact and address fields.';
+                    formErrorEl.classList.remove('hidden');
+                    return;
+                }
+
+                if (!/^\d{10}$/.test(phone)) {
+                    formErrorEl.textContent = 'Please enter a valid 10-digit phone number (numbers only).';
+                    formErrorEl.classList.remove('hidden');
+                    return;
+                }
+
+                formErrorEl.classList.add('hidden');
+
+                const customerDetails = { name, phone, address };
+
+               // Store temp data for confirmation
+            window.pendingOrder = { customerDetails, productNumbers };
+
+            // Open confirmation popup
+            document.getElementById('confirm-order-modal').classList.remove('hidden');
+
+            });
+        })
+    </script>
+    <script>
+  const scriptURL = 'https://script.google.com/macros/s/AKfycbwpeN9urP3aX0JF6o8-QR0mOlxPQM03Trv32fkfk5StXkgoTlr1qBSe69R_HBS1aehwhw/exec'
+  const form = document.forms['submit-to-google-sheet']
+
+  form.addEventListener('submit', e => {
+    e.preventDefault()
+    fetch(scriptURL, { method: 'POST', body: new FormData(form)})
+      .then(response => console.log('Success!', response))
+      .catch(error => console.error('Error!', error.message))
+  })
+
+    document.getElementById('order-basket-button').addEventListener('click', () => {
+    document.getElementById('cart-summary-container').scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+    });
+});
+</script>
+
+<!-- Confirm Order Popup -->
+<div id="confirm-order-modal"
+     class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm animate-fadeIn">
+    <h3 class="text-xl font-bold text-gray-800 mb-3">
+      Confirm Your Order
+    </h3>
+    <p class="text-gray-600 mb-6">
+      Are you sure you want to place this order? Our team will contact you shortly.
+    </p>
+
+    <div class="flex justify-end space-x-3">
+      <button id="cancel-confirm-order"
+        class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 font-medium">
+        Cancel
+      </button>
+
+      <button id="final-confirm-order"
+        class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 font-semibold">
+        Yes, Place Order
+      </button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
